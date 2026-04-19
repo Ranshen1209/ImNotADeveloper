@@ -1,6 +1,6 @@
 # ImNotADeveloper
 
-[中文](docs/readme/README.zh-CN.md) | [English](docs/readme/README.en.md) | [日本語](docs/readme/README.ja.md)
+[中文](docs/readme/README.zh-CN.md) | [日本語](docs/readme/README.ja.md)
 
 ImNotADeveloper is an **LSPosed / Xposed** module that hides developer-related signals on Android devices.
 
