@@ -1,6 +1,6 @@
 # ImNotADeveloper
 
-[リポジトリトップへ戻る](../../README.md) | [中文](README.zh-CN.md) | [English](README.en.md)
+[リポジトリトップへ戻る](../../README.md) | [中文](README.zh-CN.md)
 
 ImNotADeveloper は、Android 端末上の開発者向け状態を隠すための **Xposed / LSPosed** モジュールです。主な対象は次のとおりです。
 

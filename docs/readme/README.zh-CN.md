@@ -1,6 +1,6 @@
 # ImNotADeveloper
 
-[返回仓库首页](../../README.md) | [English](README.en.md) | [日本語](README.ja.md)
+[返回仓库首页](../../README.md) | [日本語](README.ja.md)
 
 ImNotADeveloper 是一个用于 **Xposed / LSPosed** 的模块，用来隐藏设备上的开发相关状态，例如：
 
