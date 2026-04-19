@@ -1,6 +1,7 @@
 package io.github.auag0.imnotadeveloper.xposed
 
 import android.content.SharedPreferences
+import io.github.auag0.imnotadeveloper.BuildConfig
 import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface.ModuleLoadedParam
@@ -221,6 +222,7 @@ private class ModernHookRegistrar(
     }
 
     private fun hookedLog(chain: XposedInterface.Chain) {
+        if (!BuildConfig.DEBUG) return
         val method = chain.getExecutable() as? Method ?: return
         val message = buildString {
             appendLine("Hooked ${method.declaringClass.name}$${method.name} -> ${method.returnType.name}")

@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
+#include <string>
 #include "LSPosed.h"
 #include <sys/system_properties.h>
 #include "PropKeys.h"
@@ -10,25 +11,40 @@
 int (*original_system_property_get)(const char *name, char *value);
 
 int hooked_system_property_get(const char *name, char *value) {
-    LOGD("__system_property_get: %s", name);
-    auto newProp = propOverrides.find(name);
-    if (newProp != propOverrides.end()) {
-        auto length = std::strlen(newProp->second);
-        auto boundedLength = std::min(length, static_cast<size_t>(PROP_VALUE_MAX - 1));
-        std::memcpy(value, newProp->second, boundedLength);
-        value[boundedLength] = '\0';
-        return static_cast<int>(boundedLength);
+    if (name == nullptr || value == nullptr) {
+        return original_system_property_get(name, value);
     }
-    return original_system_property_get(name, value);
+
+    std::string overrideValue;
+    {
+        std::lock_guard<std::mutex> lock(propOverridesMutex);
+        auto newProp = propOverrides.find(name);
+        if (newProp == propOverrides.end()) {
+            return original_system_property_get(name, value);
+        }
+        overrideValue = newProp->second;
+    }
+
+    auto length = overrideValue.length();
+    auto boundedLength = std::min(length, static_cast<size_t>(PROP_VALUE_MAX - 1));
+    std::memcpy(value, overrideValue.c_str(), boundedLength);
+    value[boundedLength] = '\0';
+    return static_cast<int>(boundedLength);
 }
 
 const prop_info *(*original_system_property_find)(const char *name);
 
 const prop_info *hooked_system_property_find(const char *name) {
-    // idk, it loop and freeze
-    //LOGD("__system_property_find: %s", name);
-    auto newProp = propOverrides.find(name);
-    if (newProp != propOverrides.end()) {
+    if (name == nullptr) {
+        return original_system_property_find(name);
+    }
+
+    bool isOverridden;
+    {
+        std::lock_guard<std::mutex> lock(propOverridesMutex);
+        isOverridden = propOverrides.find(name) != propOverrides.end();
+    }
+    if (isOverridden) {
         return nullptr;
     }
     return original_system_property_find(name);
@@ -36,7 +52,6 @@ const prop_info *hooked_system_property_find(const char *name) {
 
 extern "C" [[gnu::visibility("default")]] [[gnu::used]]
 NativeOnModuleLoaded native_init(const NativeAPIEntries *entries) {
-    LOGD("native_init");
     HookFunType hookFunc = entries->hook_func;
     hookFunc((void *) __system_property_get, (void *) hooked_system_property_get,
              reinterpret_cast<void **>(&original_system_property_get));

@@ -1,5 +1,19 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+val releaseKeystorePath = providers.gradleProperty("imnotadeveloper.keystore.path")
+    .orElse(providers.environmentVariable("IMNOTADEVELOPER_KEYSTORE_PATH"))
+    .orElse(layout.projectDirectory.file("release-keystore.jks").asFile.absolutePath)
+val releaseKeystoreFile = file(releaseKeystorePath.get())
+val releaseStorePassword = providers.environmentVariable("storePassword")
+val releaseKeyAlias = providers.environmentVariable("keyAlias")
+val releaseKeyPassword = providers.environmentVariable("keyPassword")
+val isReleasePackagingTaskRequested = gradle.startParameter.taskNames.any { taskName ->
+    val normalized = taskName.substringAfterLast(':')
+    normalized.startsWith("assembleRelease") ||
+        normalized.startsWith("bundleRelease") ||
+        normalized.startsWith("packageRelease")
+}
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
@@ -25,14 +39,25 @@ android {
     }
     signingConfigs {
         create("release") {
-            storeFile = File(projectDir, "release-keystore.jks")
-            storePassword = System.getenv("storePassword")
-            keyAlias = System.getenv("keyAlias")
-            keyPassword = System.getenv("keyPassword")
+            storeFile = releaseKeystoreFile
+            storePassword = releaseStorePassword.orNull
+            keyAlias = releaseKeyAlias.orNull
+            keyPassword = releaseKeyPassword.orNull
         }
     }
     buildTypes {
         release {
+            if (isReleasePackagingTaskRequested) {
+                if (!releaseKeystoreFile.exists()) {
+                    throw GradleException("Release keystore not found. Set IMNOTADEVELOPER_KEYSTORE_PATH or -Pimnotadeveloper.keystore.path.")
+                }
+                if (releaseStorePassword.orNull.isNullOrBlank() ||
+                    releaseKeyAlias.orNull.isNullOrBlank() ||
+                    releaseKeyPassword.orNull.isNullOrBlank()
+                ) {
+                    throw GradleException("Release signing env vars storePassword, keyAlias, and keyPassword must be set.")
+                }
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -43,8 +68,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures {
         buildConfig = true
@@ -69,7 +94,7 @@ android {
 
 kotlin {
     compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_1_8)
+        jvmTarget.set(JvmTarget.JVM_17)
         freeCompilerArgs.add("-opt-in=androidx.compose.material3.ExperimentalMaterial3Api")
     }
 }

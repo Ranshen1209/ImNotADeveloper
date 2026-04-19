@@ -14,6 +14,8 @@
 - 在 **LSPosed** 中打开模块详情页后点击“模块设置”
 - 在系统的应用信息页中点击“应用内的设置”
 
+应用不再提供通用 launcher 入口，以减少不必要的外部暴露面。
+
 ## Hook 点
 
 - **android.provider.Settings**
@@ -46,6 +48,18 @@
   - `development_settings_enabled`
   - `adb_enabled`
   - `adb_wifi_enabled`
+
+## Release signing
+
+Release builds read signing passwords from the `storePassword`, `keyAlias`, and `keyPassword` environment variables.
+
+The keystore path is resolved in this order:
+
+- Gradle property `-Pimnotadeveloper.keystore.path=/path/to/release-keystore.jks`
+- environment variable `IMNOTADEVELOPER_KEYSTORE_PATH`
+- legacy fallback `app/release-keystore.jks`
+
+For better secret hygiene, prefer keeping the keystore outside the repository tree and supplying the path explicitly.
 
 ## English
 
